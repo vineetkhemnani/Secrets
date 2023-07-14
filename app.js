@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
+// encrypt package to encypt data
 const encrypt = require('mongoose-encryption');
 
 

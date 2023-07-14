@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
+const encrypt = require('mongoose-encryption');
 
 
 const app = express();
@@ -23,7 +24,11 @@ mongoose
     password: String
   })
 
-  
+  // secret key for encryption
+  const secret = "Thisisourlittlesecret";
+  // using plugin to extend the functionality of our schema
+  userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password'] });
+  // encrypt while save(), decrypt() while find
 
 
   const User = new mongoose.model("User", userSchema);

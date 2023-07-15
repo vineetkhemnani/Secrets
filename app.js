@@ -1,12 +1,13 @@
 //jshint esversion:6
+// npm i passport passport-local passport-local-mongoose express-session
 require('dotenv').config()
 const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
-// bcrpypt library for salting + stronger hashing
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
+const session = require('express-session')
+const passport = require('passport')
+const passportLocalMongoose = require('passport-local-mongoose')
 
 const app = express();
 
@@ -15,6 +16,18 @@ const app = express();
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended:true}));
+
+// initialize session
+app.use(session({
+  secret: "Our little secret",
+  resave: false,
+  saveUninitialized: false
+}))
+
+// initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 mongoose
   .connect('mongodb://localhost:27017/', {
     dbName: 'userDB',
@@ -28,10 +41,14 @@ mongoose
     password: String
   })
 
-
-
-
+  // adding hash and salt package for our schema as a plugin
+  userSchema.plugin(passportLocalMongoose);
+  
   const User = new mongoose.model("User", userSchema);
+  passport.use(User.createStrategy());
+
+  passport.serializeUser(User.serializeUser())
+  passport.deserializeUser(User.deserializeUser())
 
 app.get('/',(req,res)=>{
     res.render('home');
@@ -45,41 +62,52 @@ app.get('/register', (req, res) => {
   res.render('register')
 })
 
-app.post('/register', async(req, res)=>{
+app.get('/secrets', async(req,res)=>{
+  if(req.isAuthenticated()){
+    res.render('secrets');
+  } else {
+    res.redirect('/login');
+  }
+})
 
-    try {
-      // using bcrypt to hash passwords
-      const hash = await bcrypt.hash(req.body.password, saltRounds)
-      const newUser = new User({
-        email: req.body.username,
-        password: hash,
-      })
-        await newUser.save();
-        res.render("secrets")
-    } catch (error) {
-        console.log(error)
-    }
+app.post('/register', async(req, res)=>{
+  try {
+  const user = await User.register({username: req.body.username}, req.body.password);
+  passport.authenticate("local")(req,res,()=>{
+    res.redirect('/secrets')
+  })
+} catch (error) {
+  console.log(error)
+  res.redirect('/register');
+  }
+    
 });
 
 app.post('/login', async (req,res)=>{
-  const username = req.body.username;
-  const password = req.body.password
+  const user = new User({
+    username: req.body.username,
+    password: req.body.password
+  })
 
-  try {
-    const foundUser = await User.findOne({email: username})
-    // if(foundUser.password === password)
-    // changing normal password authentication to bcrypt
-    const result = await bcrypt.compare(password,foundUser.password);
-    // foundUser.password contains the hash
-    if(result === true)
-    {
-      res.render("secrets");
+  req.login(user, err=>{
+    if(err){
+      console.log(err)
+    } else {
+      passport.authenticate("local")(req,res,()=>{
+        res.redirect('secrets')
+      })
     }
+  })
+})
 
-  } catch (error) {
-    console.log(error)
-  }
-
+app.get('/logout', async (req,res)=>{
+  req.logout(err=>{
+    if(err){
+      console.log(err)
+    }else{
+      res.redirect('/');
+    }
+  })
 })
 
 

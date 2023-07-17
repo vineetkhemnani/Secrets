@@ -142,14 +142,46 @@ userSchema.plugin(findOrCreate);
 ```
 ## Step 2
 ### Redirect to authenticate
+```
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile'] }))
+```
 ## Step 3
 ### User logs in
 *log-in on the website that the user actually trusts*
+```
+app.get('/auth/google/secrets', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/secrets');
+  });
+```
+*Need to serialize-deserialize user for all strategies not just local*
+```
+passport.serializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, {
+      id: user.id,
+      username: user.username,
+      picture: user.picture
+    });
+  });
+});
+
+passport.deserializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, user);
+  });
+});
+```
+*replace serialize-desrialize code with above code*
 ## Step 4
 ### User grants permissions
 *User selects what permissions to grant to work with*
+**Add googleId field to our database to uniquely identify users**
 ## Step 5
 ### Our Api receives back auth code
+
 ## Step 6
 ### Exchange auth code for access token
 *We can save access token in our database*

@@ -126,6 +126,20 @@ passport.use(new GoogleStrategy({
   }
 ));
 ```
+*User.findOrCreate() is a pseudocode in the above function and needs to be replaced*
+*We can make it an actual function using mongoose-findorcreate package*
+### Install mongoose-findorcreate package
+```
+npm install mongoose-findorcreate
+```
+### require mongoose-findorcreate
+```
+const findOrCreate = require('mongoose-findorcreate');
+```
+### add it as a plugin to our schema
+```
+userSchema.plugin(findOrCreate);
+```
 ## Step 2
 ### Redirect to authenticate
 ## Step 3

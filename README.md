@@ -98,3 +98,46 @@ app.get('/logout', (req,res)=>{
 })
 ```
 
+
+# OAuth
+### Why OAuth?
+*Provides Granular Access Levels- We can require access for only certain things from the vendor eg. Google, Facebook*
+*Read-only/ Read-write access*
+*Revoke access*
+
+## Step 1
+### Set-up your App
+*We get an app id from their dashboard*
+```
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+```
+
+*just after serialize-deserialize user*
+```
+passport.use(new GoogleStrategy({
+    clientID: GOOGLE_CLIENT_ID,
+    clientSecret: GOOGLE_CLIENT_SECRET,
+    callbackURL: "http://www.example.com/auth/google/callback"
+  },
+  function(accessToken, refreshToken, profile, cb) {
+    User.findOrCreate({ googleId: profile.id }, function (err, user) {
+      return cb(err, user);
+    });
+  }
+));
+```
+## Step 2
+### Redirect to authenticate
+## Step 3
+### User logs in
+*log-in on the website that the user actually trusts*
+## Step 4
+### User grants permissions
+*User selects what permissions to grant to work with*
+## Step 5
+### Our Api receives back auth code
+## Step 6
+### Exchange auth code for access token
+*We can save access token in our database*
+*This access token is valid for longer than auth code*
+

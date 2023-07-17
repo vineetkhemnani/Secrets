@@ -41,7 +41,8 @@ mongoose
   const userSchema = new mongoose.Schema({
     email: String,
     password: String,
-    googleId: String
+    googleId: String,
+    secret: String
   })
 
   // adding hash and salt package for our schema as a plugin
@@ -112,10 +113,38 @@ app.get('/register', (req, res) => {
 })
 
 app.get('/secrets', async(req,res)=>{
-  if(req.isAuthenticated()){
-    res.render('secrets');
+  try {
+    const foundUsers = await User.find({"secret": {$ne:null}});
+    if(foundUsers){
+      res.render('secrets', {usersWithSecrets: foundUsers});
+
+    }
+  } catch (error) {
+    console.log(error)
+  }
+})
+
+app.get('/submit', (req,res)=>{
+  if (req.isAuthenticated()) {
+    res.render('submit')
   } else {
-    res.redirect('/login');
+    res.redirect('/login')
+  }
+})
+
+app.post('/submit', async(req,res)=>{
+  const submittedSecret = req.body.secret;
+
+  console.log(req.user);
+  try {
+    const foundUser = await User.findById(req.user.id);
+    if(foundUser){
+      foundUser.secret = submittedSecret;
+      await foundUser.save();
+      res.redirect('/secrets')
+    }
+  } catch (error) {
+    console.log(error)
   }
 })
 
